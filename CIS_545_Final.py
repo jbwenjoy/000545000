@@ -1266,7 +1266,7 @@ for route in ['short', 'long']:
 
     X = sm.add_constant(sub['fuel_price'])  # Add intercept
     y = sub['fare']
-    
+
     model = sm.OLS(y, X).fit()  # Fit regression
     print(f"\n--- Regression for {route} routes ---")
     print(model.summary())
@@ -1307,12 +1307,33 @@ for route in ['short', 'long']:
 
 # %% [markdown]
 # # **8. Difficulty & Challenge**
-# todo ..
+# Throughout the project, we encountered several challenges that required careful consideration and creative solutions:
+# - **Outlier and Missing Value Handling:** Given the dataset's long historical range (1993–2024), inconsistencies such as missing or anomalous values were prevalent. We had to develop customized cleaning rules to remove outliers and ensure data quality without discarding too much information.
+#
+# - **High Dimensionality:** After one-hot encoding categorical variables (e.g., cities, carriers), the dataset ballooned in size. This increased both training time and the risk of overfitting, which we mitigated by applying dimensionality reduction techniques like PCA.
 #
 
 # %% [markdown]
 # # **9. Conclusion & Future work**
-# todo ..
+# In this project, we successfully explored key drivers of U.S. domestic airfare pricing using three decades of flight and economic data. Our EDA and hypothesis tests provided insight into how factors such as route distance, seasonality, carrier competition, and oil prices influence ticket costs. We also built regression models that achieved reasonable predictive performance, demonstrating the feasibility of forecasting average fares based on historical patterns and economic indicators.
 #
 
 
+
+# %% [markdown]
+# **Conclusion:**
+# - Fuel prices and market competition have a statistically significant impact on average airfare.
+#
+# - Seasonal effects interact with route distance in shaping fare trends.
+#
+#
+
+# %% [markdown]
+# **Future Work**
+# - **Deep Learning Approaches:** Implement time-series neural networks (e.g., LSTMs) for sequence-based fare prediction.
+# - **Route Clustering:** Use unsupervised methods to group similar routes for more targeted pricing analysis.
+# - **Real-Time Data:** Incorporate up-to-date APIs or live pricing feeds to extend this framework to a real-time fare monitoring tool.
+# - **Route Clustering:** Use unsupervised methods to group similar routes for more targeted pricing analysis.
+
+# %% [markdown]
+# This study lays a foundation for actionable insights in airline pricing and demonstrates the power of data-driven decision-making in transportation economics.
