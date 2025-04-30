@@ -175,14 +175,14 @@ except NameError:
 if not file_exists:
     # Create the kaggle directory and
     # (NOTE: Do NOT run this cell more than once unless restarting kernel)
-    # # !mkdir ~/.kaggle
+    # # # !mkdir ~/.kaggle
 
     # Read the uploaded kaggle.json file
-    # # !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
+    # # # !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
 
     # Download flights dataset (DO NOT CHANGE)
-    # # !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
-    # # !unzip /content/us-airline-flight-routes-and-fares-1993-2024
+    # # # !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
+    # # # !unzip /content/us-airline-flight-routes-and-fares-1993-2024
 
     flights_data = 'US Airline Flight Routes and Fares 1993-2024.csv'
     flights_df = pd.read_csv(flights_data, low_memory=False)
