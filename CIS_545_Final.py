@@ -175,7 +175,7 @@ for path, file_type in file_paths:
         print(f"{file_type} '{path}' exists.")
 
 
-# %% id="RU_Y3rm8nE9e" colab={"base_uri": "https://localhost:8080/"} outputId="9aaca05a-628a-4532-bf0f-5d5c855f96d2"
+# %% colab={"base_uri": "https://localhost:8080/"} id="RU_Y3rm8nE9e" outputId="9aaca05a-628a-4532-bf0f-5d5c855f96d2"
 """
 RUN THIS CELL IF YOU WANT TO DOWNLOAD ONLINE DATASETS FROM KAGGLE AND DATAHUB
 DO NOT RUN THE PREVIOUS CELL IF YOU DECIDE TO RUN THIS ONE!
@@ -691,7 +691,7 @@ ax.tick_params(axis='both', which='major', pad=10)
 plt.tight_layout()
 plt.show()
 
-# %% id="UIAlpNQ1F_UC" outputId="78f65f49-075d-4e33-a5d7-c33e9a293a85" colab={"base_uri": "https://localhost:8080/"}
+# %% colab={"base_uri": "https://localhost:8080/"} id="UIAlpNQ1F_UC" outputId="78f65f49-075d-4e33-a5d7-c33e9a293a85"
 # Additionally, calculate the correlation between airfare and fuel price
 
 fuel_df['Date'] = pd.to_datetime(fuel_df['Date'])
