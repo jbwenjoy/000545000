@@ -83,9 +83,32 @@
 # %% [markdown]
 # ## **2.2 Data Loading**
 
+# %% [markdown]
+# Import the relevant libraries for all stages of our report (pre-processing, exploratory data analysis, and model selection). These imports primarily span fundamental libraries such as `pandas`, `matplotlib`, `numpy`, and `sklearn`.
+# 
+# 
+# 
+
 # %%
 import os
 import pandas as pd
+import numpy as np
+from matplotlib import pyplot as plt
+from scipy import stats
+import seaborn as sns
+import matplotlib.pyplot as plt
+import warnings
+import plotly.graph_objects as go
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures, FunctionTransformer
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.base import TransformerMixin, BaseEstimator
+
+
+warnings.filterwarnings('ignore')
 
 # %%
 # Run this cell to mount your drive (you will be prompted to sign in)
@@ -185,11 +208,6 @@ if not file_exists:
 # - **Quarter-Based Aggregation**: Convert daily oil price data into quarterly averages to match the structure of the airfare dataset.
 # 
 
-# %%
-from scipy import stats
-from matplotlib import pyplot as plt
-import seaborn as sns
-
 # %% [markdown]
 # ### **2.3.1 Flight Data**
 
@@ -217,7 +235,8 @@ print(df_original.shape)
 # Handling Missing Values
 df_clean = df_original.copy()
 missing_values = df_clean.isnull().sum()
-print(missing_values)
+print("------MISS VALUES------")
+print(missing_values.to_string())
 df_clean = df_clean.dropna()
 df_clean = df_clean.dropna(axis=1)
 df_clean = df_clean.drop_duplicates()
@@ -298,13 +317,6 @@ print(fuel_df_clean.shape)
 # We primarily focused on visualizing data distributions to have a brief concept of the data ranges, and also the relationships between fare and possible deciding factors (fuel price, distance, passenger count, carrier type, etc) to understand possible correlations.
 
 # %%
-import matplotlib.pyplot as plt
-import seaborn as sns
-import warnings
-import numpy as np
-warnings.filterwarnings('ignore')
-
-# %%
 df = df_clean.copy()
 fuel_df = fuel_df_clean.copy()
 
@@ -378,11 +390,6 @@ plt.show()
 # ## **3.3 US Flight Fare and Fuel Price over Time**
 
 # %%
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-
-
 fuel_df['Date'] = pd.to_datetime(fuel_df['Date'])
 fuel_df['Year'] = fuel_df['Date'].dt.year
 avg_fuel_price_per_year = fuel_df.groupby('Year')['Price'].mean().reset_index()
@@ -428,10 +435,6 @@ plt.show()
 # * Below we also plot base on quarterly average, and we can see that the fluctuations of the two are more obvious.
 
 # %%
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-
 fuel_df['Date'] = pd.to_datetime(fuel_df['Date'])
 fuel_df['Year'] = fuel_df['Date'].dt.year
 fuel_df['Quarter'] = fuel_df['Date'].dt.quarter
@@ -480,10 +483,6 @@ plt.show()
 # ## **3.4 US Flight Fare and Passenger Count**
 
 # %%
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-
 avg_passengers_per_quarter = df.groupby(['Year', 'quarter'])['passengers'].mean().reset_index()
 avg_fare_per_quarter = df.groupby(['Year', 'quarter'])['fare'].mean().reset_index()
 
@@ -698,23 +697,119 @@ correlation_fuel_fare = merged_df['fare'].corr(merged_df['Price'])
 print(f"Correlation between airfare and fuel price (quarterly average): {correlation_fuel_fare:.2f}")
 
 # %% [markdown]
+# 
+
+# %% [markdown]
 # From the correlation analysis above, we can see that airfare does have some correlation with existing numerical features. Higher fuel price, longer distance, and less passengers tend to lead to higher fare price. Large carriers tend to dominate the market and affect the airfare the most, low-fare carriers can have less market share and more flexible pricing policy and thus lead to a weaker correlation.
 
 # %% [markdown]
-# # **4. Modeling**
+# # **4. Feature Engineering**
+# 
+# To improve model performance and enhance feature interpretability, we applied the following feature engineering steps:
+# 
+# - **Categorical Encoding**: We identified `quarter`, `citymarketid_1`, and `citymarketid_2` as categorical variables, despite being numeric in appearance. These, along with other nominal features such as `city1`, `airport_1`, and `carrier_lg`, were one-hot encoded to convert them into a format suitable for machine learning models.
+# - **Target Variable**: We selected `fare` as the prediction target, representing the average airfare for each route.
+# - **Train-Test Split**: The dataset was split into 80% for training and 20% for testing, ensuring unbiased model evaluation.
+# - **Feature Scaling**: Continuous numerical features were standardized using `StandardScaler` to ensure they are on the same scale, which benefits many machine learning algorithms.
+# - **Dimensionality Reduction**: PCA was applied to retain 95% of the variance while reducing the dimensionality of the feature space, helping to speed up model training and reduce the risk of overfitting.
+# 
+# This structured pipeline ensures that each feature is treated appropriately according to its type, resulting in a clean and model-ready dataset.
+# 
 
 # %%
-import numpy as np
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
+df_feature = df_clean.copy()
+print(df_feature.columns.tolist())
 
-from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures, FunctionTransformer
-from sklearn.linear_model import Ridge
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.base import TransformerMixin, BaseEstimator
+# %%
+### Revised Feature Engineering (Based on Feature Type Analysis)
+
+# Step 1: Copy the cleaned dataset
+df_feature = df_clean.copy()
+
+# Step 2: Identify categorical features
+categorical_cols = [
+    'quarter',
+    'citymarketid_1',
+    'citymarketid_2',
+    'city1', 'city2',
+    'airport_1', 'airport_2',
+    'carrier_lg', 'carrier_low',
+    'Geocoded_City1', 'Geocoded_City2'
+]
+
+
+categorical_cols = [col for col in categorical_cols if col in df_feature.columns]
+
+# Apply One-Hot Encoding to categorical columns
+df_feature = pd.get_dummies(df_feature, columns=categorical_cols, drop_first=True)
+
+# Step 3: Define target variable
+target_col = 'fare'
+X = df_feature.drop(columns=[target_col])
+y = df_feature[target_col]
+
+# Step 4: Train-Test Split
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Step 5: Standardize only numeric columns
+from sklearn.preprocessing import StandardScaler
+
+# Select only numeric columns for scaling
+numeric_cols = X_train.select_dtypes(include=['number']).columns
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train[numeric_cols])
+X_test_scaled = scaler.transform(X_test[numeric_cols])
+
+# Step 6: Optional - PCA to reduce dimensionality
+from sklearn.decomposition import PCA
+pca = PCA(n_components=0.95)  # Retain 95% variance
+X_train_pca = pca.fit_transform(X_train_scaled)
+X_test_pca = pca.transform(X_test_scaled)
+
+print(f"Original number of numeric features: {X_train.shape[1]}")
+print(f"After PCA: {X_train_pca.shape[1]}")
+
+
+# %%
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Select a few numeric features to visualize (to keep the plot clean)
+selected_cols = numeric_cols[:4]  # Adjust the number as needed
+
+# Create subplots: 2 rows (before/after), N columns (features)
+fig, axes = plt.subplots(2, len(selected_cols), figsize=(16, 8))
+fig.suptitle('Distribution Before vs After Standardization', fontsize=16)
+
+for i, col in enumerate(selected_cols):
+    # Plot original feature distribution (row 0)
+    sns.histplot(X_train[col], bins=30, kde=True, ax=axes[0, i], color='skyblue')
+    axes[0, i].set_title(f'Original: {col}')
+
+    # Plot standardized feature distribution (row 1)
+    col_index = list(numeric_cols).index(col)
+    sns.histplot(X_train_scaled[:, col_index], bins=30, kde=True, ax=axes[1, i], color='salmon')
+    axes[1, i].set_title(f'Scaled: {col}')
+
+# Adjust spacing
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
+
+
+# %% [markdown]
+# ### Feature Engineering Summary
+# 
+# - We treated the following as **categorical variables** and applied One-Hot Encoding: `quarter`, `citymarketid_1`, `citymarketid_2`, and all text-based features such as city names, airports, and carriers.
+# - Continuous numerical variables such as `Year`, `nsmiles`, `passengers`, etc. were retained and **standardized using StandardScaler**.
+# - The dataset was then split into training and testing subsets (80/20).
+# - Finally, **Principal Component Analysis (PCA)** was applied to reduce dimensionality while preserving 95% of the data variance.
+# 
+# This setup ensures that all variables are in a format suitable for downstream modeling and that feature types are handled appropriately.
+# 
+
+# %% [markdown]
+# # **5. Modeling**
 
 # %%
 df = df_clean.copy()
@@ -786,7 +881,7 @@ plot_prediction(pipe, X_test_sample, y_test_sample)
 # 3. Tuning the hyperparameters of the machine learning algorithms to improve their performance.
 
 # %% [markdown]
-# # **5. Project Management**
+# # **6. Project Management**
 # ### 🗓️ Timeline & Milestones
 # | 📌 Task                                | 🗓️ Deadline | ✅ Status     | 💬 Notes |
 # |----------------------------------------|-------------|---------------|---------|
@@ -805,7 +900,7 @@ plot_prediction(pipe, X_test_sample, y_test_sample)
 # - Collaboratively edit the final presentation and written report
 
 # %% [markdown]
-# # **6. Hypothesis Testing**
+# # **7. Hypothesis Testing**
 # To further validate our insights, we plan to conduct statistical hypothesis testing on key factors that may influence airfare pricing. The following hypotheses are proposed:
 # 
 # 1. **Competition Hypothesis**  
@@ -819,5 +914,15 @@ plot_prediction(pipe, X_test_sample, y_test_sample)
 # 3. **Fuel Price Impact Hypothesis**  
 #    - **Null Hypothesis (H₀):** The influence of fuel price fluctuations on airfare does not vary significantly across different types of flight routes (e.g., short-haul vs. long-haul).  
 #    - **Testing Method:** Panel data regression analysis will be used to assess differential impacts of fuel price changes across route types over time.
+
+# %% [markdown]
+# # **8. Difficulty & Challenge**
+# todo ..
+# 
+
+# %% [markdown]
+# # **9. Conclusion & Future work**
+# todo ..
+# 
 
 
