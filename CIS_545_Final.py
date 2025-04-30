@@ -175,14 +175,14 @@ except NameError:
 if not file_exists:
     # Create the kaggle directory and
     # (NOTE: Do NOT run this cell more than once unless restarting kernel)
-    # # # !mkdir ~/.kaggle
+    !mkdir ~/.kaggle
 
     # Read the uploaded kaggle.json file
-    # # # !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
+    !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
 
     # Download flights dataset (DO NOT CHANGE)
-    # # # !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
-    # # # !unzip /content/us-airline-flight-routes-and-fares-1993-2024
+    !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
+    !unzip /content/us-airline-flight-routes-and-fares-1993-2024
 
     flights_data = 'US Airline Flight Routes and Fares 1993-2024.csv'
     flights_df = pd.read_csv(flights_data, low_memory=False)
@@ -194,7 +194,7 @@ if not file_exists:
     fuel_data = 'flat-ui__data-Fri Mar 28 2025.csv'
 
 # %% [markdown]
-# ## **2.3 Data Prepossessing**
+# ## **2.3 Data Preprocessing**
 # ### 🔍 Identified Data Challenges
 # - **Missing and Anomalous Values**: Both datasets contain potential null values and outliers that need to be addressed for accurate analysis.
 # - **Data Integration**: Airfare data is provided on a quarterly basis, while oil prices are reported daily. Proper aggregation and alignment are necessary to merge the two datasets effectively.
@@ -882,7 +882,7 @@ pipe = Pipeline([
 
 pipe.fit(X_train, y_train)
 print(f"R^2 socre: {pipe.score(X_test, y_test)}")
-print(f"MSE socre: {mean_squared_error(y_test, pipe.predict(X_test))}")
+print(f"MSE score: {mean_squared_error(y_test, pipe.predict(X_test))}")
 print(f"model intercept: {pipe.named_steps['model'].intercept_}")
 print(f"model coefficients: {pipe.named_steps['model'].coef_}")
 
