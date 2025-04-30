@@ -175,14 +175,14 @@ except NameError:
 if not file_exists:
     # Create the kaggle directory and
     # (NOTE: Do NOT run this cell more than once unless restarting kernel)
-    # # !mkdir ~/.kaggle
+    !mkdir ~/.kaggle
 
     # Read the uploaded kaggle.json file
-    # # !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
+    !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
 
     # Download flights dataset (DO NOT CHANGE)
-    # # !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
-    # # !unzip /content/us-airline-flight-routes-and-fares-1993-2024
+    !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
+    !unzip /content/us-airline-flight-routes-and-fares-1993-2024
 
     flights_data = 'US Airline Flight Routes and Fares 1993-2024.csv'
     flights_df = pd.read_csv(flights_data, low_memory=False)
@@ -194,7 +194,7 @@ if not file_exists:
     fuel_data = 'flat-ui__data-Fri Mar 28 2025.csv'
 
 # %% [markdown]
-# ## **2.3 Data Prepossessing**
+# ## **2.3 Data Preprocessing**
 # ### 🔍 Identified Data Challenges
 # - **Missing and Anomalous Values**: Both datasets contain potential null values and outliers that need to be addressed for accurate analysis.
 # - **Data Integration**: Airfare data is provided on a quarterly basis, while oil prices are reported daily. Proper aggregation and alignment are necessary to merge the two datasets effectively.
@@ -465,6 +465,8 @@ ax2 = ax1.twinx()
 sns.lineplot(x='Year-Quarter', y='Price', data=merged_df, marker='s', color='red', ax=ax2, label='Average Fuel Price')
 ax2.set_ylabel('Average Fuel Price (USD)', color='red', fontsize=12)
 ax2.tick_params(axis='y', labelcolor='red')
+
+# Add solid line to the right spine of ax2
 ax2.spines['right'].set_visible(True)
 ax2.spines['right'].set_color('red')
 ax2.legend(loc='upper right')
@@ -816,34 +818,75 @@ plt.show()
 # %% [markdown]
 # # **5. Modeling**
 
+# %% [markdown]
+# ## **5.1 Baseline model**
+
+# %% [markdown]
+# Originally, we utilize the linear regression as the baseline model. This regression model takes the distance ( <i>nmiles</i> ), time ( <i>Year</i>, <i>Quarter</i> ) and fuel price into consideration, and the target of prediction is exactly the average price of the given flights.
+
+# %%
+import numpy as np
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.linear_model import Ridge, Lasso
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.base import TransformerMixin, BaseEstimator
+
 # %%
 df = df_clean.copy()
-df['quaters'] = df['quarter'].astype(int) + (df['Year'].astype(int) - 2000) * 4
-new_df = df[['fare', 'nsmiles', 'quaters']].dropna()
+# df['quaters'] = df['quarter'].astype(int) + (df['Year'].astype(int) - 2000) * 4
+# add the oil price to df
+new_df = df[['fare', 'nsmiles', 'quarter', 'Year']].dropna()
+fuel_df = fuel_df_clean.copy()
+fuel_df_year_quarter = fuel_df.copy()
+fuel_df_year_quarter['Year'] = fuel_df_year_quarter['Date'].str[:4].astype(int)
+fuel_df_year_quarter['Quarter'] = fuel_df_year_quarter['Date'].str[5:7].astype(int)
+fuel_df_year_quarter['Quarter'] = (fuel_df_year_quarter['Quarter'] - 1) // 3 + 1
+fuel_df_year_quarter = fuel_df_year_quarter.drop('Date', axis=1)
+# find the mean oil price for the quarter
+fuel_df_year_quarter = fuel_df_year_quarter.groupby(['Year', 'Quarter']).mean().reset_index()
 
-X = new_df[['nsmiles', 'quaters']]
+new_df = pd.merge(new_df, fuel_df_year_quarter, left_on=['Year', 'quarter'], right_on=['Year', 'Quarter'], how='left')
+new_df = new_df.drop(['Quarter'], axis=1)
+
+numerical_features = ['Year', 'Price', 'nsmiles']
+categorical_features = ['quarter']
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), numerical_features),
+        ("cat", OneHotEncoder(drop='first'), categorical_features)
+    ]
+)
+
+X = new_df[['nsmiles', 'quarter', 'Year', 'Price']]
 y = new_df['fare']
 
-# %%
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# %%
-log_transformer = FunctionTransformer(np.log1p, inverse_func=np.expm1, validate=True)
 
+
+# %%
 pipe = Pipeline([
-    ('scaler', MinMaxScaler()),
-    ('model', LinearRegression()),
+    ("pre", preprocessor),
+    ("model", LinearRegression())
 ])
 
 pipe.fit(X_train, y_train)
 print(f"R^2 socre: {pipe.score(X_test, y_test)}")
-print(f"MSE socre: {mean_squared_error(y_test, pipe.predict(X_test))}")
+print(f"MSE score: {mean_squared_error(y_test, pipe.predict(X_test))}")
 print(f"model intercept: {pipe.named_steps['model'].intercept_}")
 print(f"model coefficients: {pipe.named_steps['model'].coef_}")
 
-def plot_prediction(model,X_test, y_test):
+def plot_prediction(model, X_test, y_test):
     y_test_pred = model.predict(X_test)
     # use plotly to plot y_train_pred and y_test_pred vs y_train and y_test
     fig = go.Figure()
@@ -852,8 +895,8 @@ def plot_prediction(model,X_test, y_test):
     fig.add_trace(go.Scatter(x=y_test, y=y_test_pred, mode='markers', name='test'))
     min_val = min(y_test.min(), y_test_pred.min())
     max_val = max(y_test.max(), y_test_pred.max())
-    fig.update_xaxes(range=[min_val - 50, max_val + 50])
-    fig.update_yaxes(range=[min_val - 50, max_val + 50])
+    fig.update_xaxes(range=[.75 * min_val, 1.25 * max_val])
+    fig.update_yaxes(range=[.75 * min_val, 1.25 * max_val])
     # add title and axis labels
     fig.update_layout(title='Prediction vs Actual',
                     xaxis_title='Actual',
@@ -879,11 +922,187 @@ plot_prediction(pipe, X_test_sample, y_test_sample)
 
 
 # %% [markdown]
-# As we can see, the baseline linear regression model has a very low R-squared value. This means that the model is not a good fit for the data.
-# We would like to further improve the performance by :
-# 1. Adding more features, such as dealing with the categorical features and using the one-hot encoding technique.
-# 2. Using more advanced machine learning algorithms, such as **kernel regression** and **gradient boosting trees**. These algorithms are designed to handle complex relationships between the features and the target variable. For example, kernel regression uses a kernel function to map the input features to a higher-dimensional space, while gradient boosting trees use a series of decision trees to build a strong predictive model. These algorithms can capture more complex relationships between the features and the target variable, which can lead to better performance than linear regression does.
-# 3. Tuning the hyperparameters of the machine learning algorithms to improve their performance.
+# The performance for the baseline model is not quite good, which shows that merely linear relationship can hardly justify the fare price given the parameters. We will try to optimize it via adding some new features and employing more advanced models.
+
+# %% [markdown]
+# ## **5.2 Ridge Regression**
+
+# %% [markdown]
+# We first try to utilize ridge regression to improve the performance of the linear regression. Keeping all the conditions invariant, we employ ridge regression like:
+
+# %%
+ridge_pipe = Pipeline([
+    ("pre", preprocessor),
+    ('model', Ridge(alpha=10.0)),
+])
+
+ridge_pipe.fit(X_train, y_train)
+print(f"R^2 socre: {ridge_pipe.score(X_test, y_test)}")
+print(f"MSE socre: {mean_squared_error(y_test, ridge_pipe.predict(X_test))}")
+print(f"model intercept: {ridge_pipe.named_steps['model'].intercept_}")
+print(f"model coefficients: {ridge_pipe.named_steps['model'].coef_}")
+
+# plot the prediction
+X_test_sample = X_test.sample(100)
+y_test_sample = y_test.loc[X_test_sample.index]
+plot_prediction(ridge_pipe, X_test_sample, y_test_sample)
+
+# %% [markdown]
+# We also could try to utlize some polynomial features to increase the performance of the regression:
+
+# %%
+# add some more features
+new_df['nsmiles_squared'] = new_df['nsmiles'] ** 2
+new_df['price_squared'] = new_df['Price'] ** 2
+new_df['nsmiles_times_price'] = new_df['Price'] * new_df['nsmiles']
+
+X = new_df[['nsmiles', 'quarter', 'Year', 'Price', 'nsmiles_squared', 'price_squared', 'nsmiles_times_price']]
+Y = new_df['fare']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, Y, test_size=0.2, random_state=42
+)
+
+new_numerical_features = ['Year', 'Price', 'nsmiles', 'nsmiles_squared', 'price_squared', 'nsmiles_times_price']
+new_categorical_features = ['quarter']
+
+new_preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), new_numerical_features),
+        ("cat", OneHotEncoder(drop='first'), new_categorical_features)
+    ]
+)
+
+new_ridge_pipe = Pipeline([
+    ("pre", new_preprocessor),
+    ('model', Ridge(alpha=10.0)),
+])
+
+new_ridge_pipe.fit(X_train, y_train)
+print(f"R^2 socre: {new_ridge_pipe.score(X_test, y_test)}")
+print(f"MSE socre: {mean_squared_error(y_test, new_ridge_pipe.predict(X_test))}")
+print(f"model intercept: {new_ridge_pipe.named_steps['model'].intercept_}")
+print(f"model coefficients: {new_ridge_pipe.named_steps['model'].coef_}")
+
+X_test_sample = X_test.sample(100)
+y_test_sample = y_test.loc[X_test_sample.index]
+plot_prediction(new_ridge_pipe, X_test_sample, y_test_sample)
+
+# %% [markdown]
+# Utilizing the grid search technique to find the best parameter on the training set:
+
+# %%
+# utilize grid search
+param_grid = {
+    'model__alpha': [0.01, 0.1, 1, 5, 10, 100]
+}
+
+grid = GridSearchCV(new_ridge_pipe, param_grid, cv=5)
+grid.fit(X_train, y_train)
+
+print("Best param: ", grid.best_params_)
+print("CV R² : ", grid.best_score_)
+print("Test R² : ", grid.score(X_test, y_test))
+print("Test MSE: ", mean_squared_error(y_test, grid.predict(X_test)))
+
+# %% [markdown]
+# Ridge regression only improve the model performance to the slightest level, showing that linear model could hardly address the prediction. Hence, more powerful non-linear models such as tree models and neural network could possibly help us to improve the performance of the model. Considering there are so many high dimensional categorical features, we think tree model like GBDT and XGBoost could be the best solution to such a problem.
+
+# %% [markdown]
+# ## **5.3 Xgboost**
+
+# %% [markdown]
+# Linear model are not quite powerful when we have a lot of categorical data (i.e. the airport code and the name of the starting city). Also, linear model is not really good at dealing with multi-linear condition, this means that if the variables are highly correlated, the linear model may be ill-performed. Avoiding this case, we believe tree models like **Xgboost** is also a good way to address such a problem.
+
+# %%
+# involve more categorical data to make regression on Xgboost
+import xgboost as xgb
+from sklearn.metrics import mean_squared_error
+
+df = df_clean.copy()
+
+tree_df = df[['fare', 'nsmiles', 'quarter', 'Year', 'city1', 'city2', 'passengers']].dropna()
+tree_df = pd.merge(tree_df, fuel_df_year_quarter, left_on=['Year', 'quarter'], right_on=['Year', 'Quarter'], how='left')
+tree_df = tree_df.drop(['Quarter'], axis=1)
+
+numerical_features = ['Year', 'Price', 'nsmiles']
+categorical_features = ['quarter', 'city1', 'city2']
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), numerical_features),
+        ("cat", OneHotEncoder(drop='first'), categorical_features)
+    ]
+)
+
+X = tree_df[['nsmiles', 'quarter', 'Year', 'Price', 'city1', 'city2']]
+X['quarter'] = X['quarter'].astype('category')
+X['city1'] = X['city1'].astype('category')
+X['city2'] = X['city2'].astype('category')
+
+y = tree_df['fare']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+
+
+tree_model = xgb.XGBRegressor(
+    n_estimators=100,
+    learning_rate=0.1,
+    max_depth=6,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    enable_categorical=True,
+    random_state=42
+)
+
+tree_model.fit(X_train, y_train)
+
+
+y_pred = tree_model.predict(X_test)
+
+
+mse = mean_squared_error(y_test, y_pred)
+print(f"Test MSE: {mse:.4f}")
+print(f"Test R^2: {tree_model.score(X_test, y_test):.4f}")
+
+X_test_sample = X_test.sample(100)
+y_test_sample = y_test.loc[X_test_sample.index]
+plot_prediction(tree_model, X_test_sample, y_test_sample)
+
+# %% [markdown]
+# We could find there is a huge improvement when we try to adopt the tree model for regression, and we could do grid search to find the best parameters:
+
+# %%
+xgb_model = xgb.XGBRegressor(
+    objective='reg:squarederror',
+    random_state=42,
+    enable_categorical=True
+)
+
+param_grid = {
+    'n_estimators': [100, 300],
+    'max_depth': [3, 5, 7],
+    'learning_rate': [0.01, 0.1],
+    'subsample': [0.8, 1.0]
+}
+
+grid_search = GridSearchCV(xgb_model, param_grid, cv=3, verbose=1, scoring='neg_mean_squared_error', n_jobs=-1)
+grid_search.fit(X_train, y_train)
+
+best_model = grid_search.best_estimator_
+y_pred = best_model.predict(X_test)
+
+
+print(f"Test MSE: {mean_squared_error(y_test, y_pred)}")
+print(f"Test R^2: {best_model.score(X_test, y_test)}")
+
+plot_prediction(best_model, X_test_sample, y_test_sample)
+
+# %% [markdown]
+# As we can see, employing the ensembled tree model like XGBoost could significantly increase the $R^2$ and decrease the MSE loss. Via grid search, we could also do the hyperparameter tuning on the train set, so that we could find the best hyperparameter on the test set and real world data. However, since the flight pricing model is a complicated and time-variant model which is the most top secret for the airlines, simply market data could hardly justify the model.
 
 # %% [markdown]
 # # **6. Project Management**
