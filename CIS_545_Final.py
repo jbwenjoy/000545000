@@ -2,7 +2,7 @@
 # <a href="https://colab.research.google.com/github/jbwenjoy/000545000/blob/jbw/CIS_545_Final.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 # %% [markdown]
-# 
+#
 
 # %% [markdown]
 # # **CIS 5450 Final Project - Spring 2025**
@@ -17,36 +17,36 @@
 # %% [markdown]
 # ## **1.1 Problem Statement**
 # Airfare pricing in the U.S. domestic airline industry has long been a topic of interest due to its dynamic and opaque nature. From 1993 to 2024, the industry has undergone substantial changes including fluctuating fuel prices, shifting market competition, and evolving consumer behavior. These factors make it difficult for travelers to anticipate ticket prices and for airlines to optimize revenue through effective pricing strategies.
-# 
+#
 # Despite the abundance of large-scale data, there remains a lack of comprehensive, data-driven analyses that systematically explore the relationship between these variables and airfare trends. One of our team members is planning to book a flight during a holiday period and is particularly interested in understanding what drives changes in ticket prices. This curiosity sparked our interest and motivated us to investigate whether historical data could reveal meaningful patterns that help consumers make more informed travel decisions.
 
 # %% [markdown]
 # ## **1.2 Objective and Value Proposition**
 # The objective of this project is to conduct a thorough exploratory data analysis (EDA) of U.S. domestic airline fares from 1993 to 2024, and to develop predictive models that capture how different variables affect airfare pricing. The project integrates route and fare data with external economic indicators such as oil prices to uncover insights into airfare dynamics.
-# 
+#
 # The primary goals are:
-# 
+#
 # - **Understand Key Drivers of Pricing:** Investigate how factors like route distance, seasonality, fuel costs, airline competition, and passenger volume affect airfares.
-# 
+#
 # - **Support Strategic Planning:** Provide insights to airline operators and policymakers for optimizing pricing strategies and understanding long-term market shifts.
-# 
+#
 # - **Build a Predictive Model:** Develop regression models capable of forecasting average fares given known market and economic conditions.
-# 
+#
 # The value proposition of this project lies in offering a systematic and scalable framework for analyzing complex fare-setting behavior across three decades. For consumers, it may lead to better fare predictions and smarter booking decisions. For industry stakeholders, it provides tools for data-informed pricing and long-term planning.
 
 # %% [markdown]
 # # **2. Data Loading and Preprocessing**
-# 
-# 
+#
+#
 
 # %% [markdown]
 # ## **2.1 📊 Overview of the Dataset**
 # This project uses two complementary datasets to explore the relationship between airline ticket pricing and external economic factors, particularly oil prices. The integration of these datasets allows for a data-driven analysis of historical fare trends in the U.S. domestic airline market over the past three decades.
 # ### **✈️ US Airline Flight Routes and Fares (1993–2024)**
 # **Source**: [Kaggle Dataset – US Airline Flight Routes and Fares (1993–2024)](https://www.kaggle.com/datasets/bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024)
-# 
+#
 # This dataset provides detailed information on airline flight routes, average fares, passenger volume, and carrier competition across the United States.
-# 
+#
 # **Key Features:**
 # - **Year & Quarter**: Time identifiers for each record, from 1993 to 2024.
 # - **City1 & City2**: Names of origin and destination cities.
@@ -56,38 +56,38 @@
 # - **Fare**: Average fare for the route.
 # - **Carrier Info**: Largest and lowest-fare carrier codes, their market shares, and corresponding fares.
 # - **Geographical Coordinates**: Latitude and longitude of both origin and destination cities.
-# 
-# 
+#
+#
 # The dataset enables long-term trend analysis of pricing behavior, route dynamics, and airline competition in the domestic travel sector.
-# 
+#
 # ---
-# 
+#
 # ### **🛢️ WTI Crude Oil Daily Prices**
-# 
+#
 # Sourced from [DataHub](https://datahub.io/core/oil-prices), this dataset provides historical daily spot prices for West Texas Intermediate (WTI) crude oil.
-# 
+#
 # **Key Features:**
 # - **Date**: Daily timestamps for each price record.
 # - **Price**: The WTI crude oil price in USD per barrel.
-# 
+#
 # This dataset supports economic analysis and helps model the impact of fuel prices on airline operating costs.  
-# 
+#
 # By combining historical airfare and fuel price data, this project aims to:
 # - Uncover patterns in ticket pricing.
 # - Investigate the impact of fuel cost fluctuations on airline fares.
 # - Improve prediction accuracy using external economic indicators.
-# 
+#
 # This integrated approach allows for a richer understanding of pricing behavior and supports more informed consumer and industry decisions.
-# 
+#
 
 # %% [markdown]
 # ## **2.2 Data Loading**
 
 # %% [markdown]
 # Import the relevant libraries for all stages of our report (pre-processing, exploratory data analysis, and model selection). These imports primarily span fundamental libraries such as `pandas`, `matplotlib`, `numpy`, and `sklearn`.
-# 
-# 
-# 
+#
+#
+#
 
 # %%
 import os
@@ -175,14 +175,14 @@ except NameError:
 if not file_exists:
     # Create the kaggle directory and
     # (NOTE: Do NOT run this cell more than once unless restarting kernel)
-    !mkdir ~/.kaggle
+    # !mkdir ~/.kaggle
 
     # Read the uploaded kaggle.json file
-    !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
+    # !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
 
     # Download flights dataset (DO NOT CHANGE)
-    !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
-    !unzip /content/us-airline-flight-routes-and-fares-1993-2024
+    # !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
+    # !unzip /content/us-airline-flight-routes-and-fares-1993-2024
 
     flights_data = 'US Airline Flight Routes and Fares 1993-2024.csv'
     flights_df = pd.read_csv(flights_data, low_memory=False)
@@ -198,15 +198,15 @@ if not file_exists:
 # ### 🔍 Identified Data Challenges
 # - **Missing and Anomalous Values**: Both datasets contain potential null values and outliers that need to be addressed for accurate analysis.
 # - **Data Integration**: Airfare data is provided on a quarterly basis, while oil prices are reported daily. Proper aggregation and alignment are necessary to merge the two datasets effectively.
-# 
+#
 # ---
-# 
+#
 # ### 🛠️ Proposed Solutions
-# 
+#
 # - **Outlier Detection and Filtering**: Use statistical thresholds to filter out unreasonable values (e.g., negative fares or extremely long flights).
 # - **Handling Missing Values**: Apply appropriate methods such as row filtering, median imputation, or interpolation to manage missing entries.
 # - **Quarter-Based Aggregation**: Convert daily oil price data into quarterly averages to match the structure of the airfare dataset.
-# 
+#
 
 # %% [markdown]
 # ### **2.3.1 Flight Data**
@@ -313,7 +313,7 @@ print(fuel_df_clean.shape)
 
 # %% [markdown]
 # # **3. Exploratory Data Analysis (EDA)**
-# 
+#
 # We primarily focused on visualizing data distributions to have a brief concept of the data ranges, and also the relationships between fare and possible deciding factors (fuel price, distance, passenger count, carrier type, etc) to understand possible correlations.
 
 # %%
@@ -356,11 +356,11 @@ plt.show()
 
 # %% [markdown]
 # We can see that:
-# 
+#
 # * Airfare centers around 200 USD, while there are extreme values, it's still very symmetrical.
-# 
+#
 # * Distance range from about 200 miles to over 2500 miles, with 1500 miles serving as a dividing line. The distribution is fairly uniform both below and above 1,500 miles, but the average frequency in these two segments differs by about a factor of two.
-# 
+#
 # * Fuel price ranges greatly over the years.
 
 # %% [markdown]
@@ -381,9 +381,9 @@ plt.show()
 
 # %% [markdown]
 # From the plot:
-# 
+#
 # * There is an approximately linear relationship between airfare and the distance of the route.
-# 
+#
 # * The slope is small and the variance is very large. This aligns with our real-world experience that airfare can vary greatly.
 
 # %% [markdown]
@@ -410,18 +410,19 @@ ax1.set_xlabel('Year', fontsize=12)
 ax1.set_ylabel('Average Fare (USD)', color='blue', fontsize=12)
 ax1.tick_params(axis='y', labelcolor='blue')
 ax1.grid(True, linestyle='--', alpha=0.7)
+ax1.legend(loc='upper left')
 
 # Avr fuel price (ax2)
 ax2 = ax1.twinx()
 sns.lineplot(x='Year', y='Price', data=avg_fuel_price_per_year, marker='s', color='red', ax=ax2, label='Average Fuel Price')
 ax2.set_ylabel('Average Fuel Price (USD)', color='red', fontsize=12)
 ax2.tick_params(axis='y', labelcolor='red')
-
+ax2.legend(loc='upper right')
 
 ax2.spines['right'].set_visible(True)
 ax2.spines['right'].set_color('red')
 plt.title('Average Fare and Fuel Price Over Time (by Year)', fontsize=14, fontweight='bold')
-fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.95))
+# fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.95))
 sns.despine()
 plt.tight_layout()
 
@@ -429,9 +430,9 @@ plt.show()
 
 # %% [markdown]
 # From the plot:
-# 
+#
 # * We can see some correlation between flight ticket fare and fuel price, but averging by year is somewhat rough.
-# 
+#
 # * Below we also plot base on quarterly average, and we can see that the fluctuations of the two are more obvious.
 
 # %%
@@ -455,19 +456,19 @@ ax1.set_xlabel('Year-Quarter', fontsize=12)
 ax1.set_ylabel('Average Fare (USD)', color='blue', fontsize=12)
 ax1.tick_params(axis='y', labelcolor='blue')
 ax1.grid(True, linestyle='--', alpha=0.7)
+ax1.legend(loc='upper left')
 
 # Avr fuel price (ax2)
 ax2 = ax1.twinx()
 sns.lineplot(x='Year-Quarter', y='Price', data=merged_df, marker='s', color='red', ax=ax2, label='Average Fuel Price')
 ax2.set_ylabel('Average Fuel Price (USD)', color='red', fontsize=12)
 ax2.tick_params(axis='y', labelcolor='red')
-
-# Add solid line to the right spine of ax2
 ax2.spines['right'].set_visible(True)
 ax2.spines['right'].set_color('red')
+ax2.legend(loc='upper right')
 
 plt.title('Average Quarterly Fare and Fuel Price Over Time (by Season)', fontsize=14, fontweight='bold')
-fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.95))
+# fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.95))
 
 plt.xticks(rotation=45)
 ax1.xaxis.set_major_locator(plt.MaxNLocator(15)) # Maximum num of x labels
@@ -497,6 +498,7 @@ fig, ax1 = plt.subplots(figsize=(15, 6))
 sns.lineplot(x='Year-Quarter', y='fare', data=merged_df, marker='s', color='blue', ax=ax1, label='Average Fare')
 ax1.set_ylabel('Average Fare (USD)', color='blue', fontsize=12)
 ax1.tick_params(axis='y', labelcolor='blue')
+ax1.legend(loc='upper left')
 
 ax2 = ax1.twinx()
 sns.lineplot(x='Year-Quarter', y='passengers', data=merged_df, marker='o', color='red', ax=ax2, label='Average Passengers')
@@ -504,12 +506,13 @@ ax2.set_xlabel('Year-Quarter', fontsize=12)
 ax2.set_ylabel('Average Passengers', color='red', fontsize=12)
 ax2.tick_params(axis='y', labelcolor='red')
 ax2.grid(True, linestyle='--', alpha=0.7)
+ax2.legend(loc='upper right')
 
 ax2.spines['right'].set_visible(True)
 ax2.spines['right'].set_color('red')
 
 plt.title('Average Quarterly Passengers and Fare Over Time', fontsize=14, fontweight='bold')
-fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.95))
+# fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.95))
 plt.xticks(rotation=45)
 ax1.xaxis.set_major_locator(plt.MaxNLocator(15))
 sns.despine()
@@ -519,7 +522,7 @@ plt.show()
 
 # %% [markdown]
 # From the plot:
-# 
+#
 # * Looks like there isn't a strong correlation between flight fare and passenger counts.
 
 # %%
@@ -537,7 +540,7 @@ plt.show()
 
 # %% [markdown]
 # From the plot:
-# 
+#
 # * We can see that the fares are more stable when there is a high passenger volume on a route.
 
 # %% [markdown]
@@ -558,9 +561,9 @@ plt.show()
 
 # %% [markdown]
 # From this plot:
-# 
+#
 # * We can roughly see that for air tickets between about 100-300 USD, the fares of different carriers vary greatly.
-# 
+#
 # * The differences become much smaller after 300 USD.
 
 # %% [markdown]
@@ -697,24 +700,24 @@ correlation_fuel_fare = merged_df['fare'].corr(merged_df['Price'])
 print(f"Correlation between airfare and fuel price (quarterly average): {correlation_fuel_fare:.2f}")
 
 # %% [markdown]
-# 
+#
 
 # %% [markdown]
 # From the correlation analysis above, we can see that airfare does have some correlation with existing numerical features. Higher fuel price, longer distance, and less passengers tend to lead to higher fare price. Large carriers tend to dominate the market and affect the airfare the most, low-fare carriers can have less market share and more flexible pricing policy and thus lead to a weaker correlation.
 
 # %% [markdown]
 # # **4. Feature Engineering**
-# 
+#
 # To improve model performance and enhance feature interpretability, we applied the following feature engineering steps:
-# 
+#
 # - **Categorical Encoding**: We identified `quarter`, `citymarketid_1`, and `citymarketid_2` as categorical variables, despite being numeric in appearance. These, along with other nominal features such as `city1`, `airport_1`, and `carrier_lg`, were one-hot encoded to convert them into a format suitable for machine learning models.
 # - **Target Variable**: We selected `fare` as the prediction target, representing the average airfare for each route.
 # - **Train-Test Split**: The dataset was split into 80% for training and 20% for testing, ensuring unbiased model evaluation.
 # - **Feature Scaling**: Continuous numerical features were standardized using `StandardScaler` to ensure they are on the same scale, which benefits many machine learning algorithms.
 # - **Dimensionality Reduction**: PCA was applied to retain 95% of the variance while reducing the dimensionality of the feature space, helping to speed up model training and reduce the risk of overfitting.
-# 
+#
 # This structured pipeline ensures that each feature is treated appropriately according to its type, resulting in a clean and model-ready dataset.
-# 
+#
 
 # %%
 df_feature = df_clean.copy()
@@ -799,14 +802,14 @@ plt.show()
 
 # %% [markdown]
 # ### Feature Engineering Summary
-# 
+#
 # - We treated the following as **categorical variables** and applied One-Hot Encoding: `quarter`, `citymarketid_1`, `citymarketid_2`, and all text-based features such as city names, airports, and carriers.
 # - Continuous numerical variables such as `Year`, `nsmiles`, `passengers`, etc. were retained and **standardized using StandardScaler**.
 # - The dataset was then split into training and testing subsets (80/20).
 # - Finally, **Principal Component Analysis (PCA)** was applied to reduce dimensionality while preserving 95% of the data variance.
-# 
+#
 # This setup ensures that all variables are in a format suitable for downstream modeling and that feature types are handled appropriately.
-# 
+#
 
 # %% [markdown]
 # # **5. Modeling**
@@ -891,9 +894,9 @@ plot_prediction(pipe, X_test_sample, y_test_sample)
 # | Advanced model training (RF, XGBoost)  | April 20    | 🟡 In progress| Random Forest currently being tuned |
 # | Model evaluation and result visualization | April 25 | ⏳ Upcoming   | Will compare models using R² and RMSE |
 # | Final report writing and presentation  | April 30    | ⏳ Upcoming   | We’ll prepare slides, summary, and submit final deliverables |
-# 
+#
 # ### 📈 Progress Tracking
-# 
+#
 # We are using a shared Google Colab and GitHub repository to:
 # - Track task completion status
 # - Share code updates and experiment logs
@@ -902,15 +905,15 @@ plot_prediction(pipe, X_test_sample, y_test_sample)
 # %% [markdown]
 # # **7. Hypothesis Testing**
 # To further validate our insights, we plan to conduct statistical hypothesis testing on key factors that may influence airfare pricing. The following hypotheses are proposed:
-# 
+#
 # 1. **Competition Hypothesis**  
 #    - **Null Hypothesis (H₀):** The level of market competition on a route has no significant correlation with average airfare.  
 #    - **Testing Method:** Correlation analysis and significance testing of regression coefficients will be used to evaluate the impact of competition intensity on pricing.
-# 
+#
 # 2. **Seasonality Hypothesis**  
 #    - **Null Hypothesis (H₀):** Seasonal variations in airfare do not differ significantly across routes with varying travel distances.  
 #    - **Testing Method:** Two-way ANOVA (Analysis of Variance) will be applied to examine the interaction effect between seasonality and route distance categories on airfare.
-# 
+#
 # 3. **Fuel Price Impact Hypothesis**  
 #    - **Null Hypothesis (H₀):** The influence of fuel price fluctuations on airfare does not vary significantly across different types of flight routes (e.g., short-haul vs. long-haul).  
 #    - **Testing Method:** Panel data regression analysis will be used to assess differential impacts of fuel price changes across route types over time.
@@ -918,11 +921,11 @@ plot_prediction(pipe, X_test_sample, y_test_sample)
 # %% [markdown]
 # # **8. Difficulty & Challenge**
 # todo ..
-# 
+#
 
 # %% [markdown]
 # # **9. Conclusion & Future work**
 # todo ..
-# 
+#
 
 
