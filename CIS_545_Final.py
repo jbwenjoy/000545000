@@ -102,13 +102,15 @@ import warnings
 import plotly.graph_objects as go
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures, FunctionTransformer
-from sklearn.linear_model import Ridge
+from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures, FunctionTransformer, OneHotEncoder, StandardScaler
+from sklearn.linear_model import Ridge, Lasso
 from sklearn.linear_model import LinearRegression
+from sklearn.compose import ColumnTransformer
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.base import TransformerMixin, BaseEstimator
 from statsmodels.formula.api import ols
 import statsmodels.api as sm
+import xgboost as xgb
 
 warnings.filterwarnings('ignore')
 
@@ -177,14 +179,14 @@ except NameError:
 if not file_exists:
     # Create the kaggle directory and
     # (NOTE: Do NOT run this cell more than once unless restarting kernel)
-    !mkdir ~/.kaggle
+    # !mkdir ~/.kaggle
 
     # Read the uploaded kaggle.json file
-    !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
+    # !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
 
     # Download flights dataset (DO NOT CHANGE)
-    !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
-    !unzip /content/us-airline-flight-routes-and-fares-1993-2024
+    # !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
+    # !unzip /content/us-airline-flight-routes-and-fares-1993-2024
 
     flights_data = 'US Airline Flight Routes and Fares 1993-2024.csv'
     flights_df = pd.read_csv(flights_data, low_memory=False)
@@ -890,20 +892,6 @@ plt.show()
 # Originally, we utilize the linear regression as the baseline model. This regression model takes the distance ( <i>nmiles</i> ), time ( <i>Year</i>, <i>Quarter</i> ) and fuel price into consideration, and the target of prediction is exactly the average price of the given flights.
 
 # %%
-import numpy as np
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-
-from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import Ridge, Lasso
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.base import TransformerMixin, BaseEstimator
-
-# %%
 df = df_clean.copy()
 # df['quaters'] = df['quarter'].astype(int) + (df['Year'].astype(int) - 2000) * 4
 # add the oil price to df
@@ -1081,8 +1069,6 @@ print("Test MSE: ", mean_squared_error(y_test, grid.predict(X_test)))
 
 # %%
 # involve more categorical data to make regression on Xgboost
-import xgboost as xgb
-from sklearn.metrics import mean_squared_error
 
 df = df_clean.copy()
 
@@ -1177,9 +1163,9 @@ plot_prediction(best_model, X_test_sample, y_test_sample)
 # | Data acquisition and initial cleaning  | April 5     | ✅ Completed  | All raw data sources merged and cleaned |
 # | Exploratory Data Analysis (EDA)        | April 10    | ✅ Completed  | Key visuals and early insights generated |
 # | Baseline regression model              | April 12    | ✅ Completed  | Linear regression used as a baseline |
-# | Advanced model training (RF, XGBoost)  | April 20    | 🟡 In progress| Random Forest currently being tuned |
-# | Model evaluation and result visualization | April 25 | ⏳ Upcoming   | Will compare models using R² and RMSE |
-# | Final report writing and presentation  | April 30    | ⏳ Upcoming   | We’ll prepare slides, summary, and submit final deliverables |
+# | Advanced model training (RF, XGBoost)  | April 20    | ✅ Completed| Random Forest currently being tuned |
+# | Model evaluation and result visualization | April 25 | ✅ Completed   | Will compare models using R² and RMSE |
+# | Final report writing and presentation  | April 30    | ✅ Completed   | We’ll prepare slides, summary, and submit final deliverables |
 #
 # ### 📈 Progress Tracking
 #
