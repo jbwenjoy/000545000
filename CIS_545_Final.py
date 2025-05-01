@@ -592,7 +592,7 @@ sns.barplot(x='passengers', y='city1', data=top_cities,
 plt.title('Top 10 Busiest US Cities by Departing Traffic (1993-2024)',
           fontsize=16, fontweight='bold')
 plt.xlabel('Total Passengers (in Millions)', fontsize=14)
-plt.ylabel('Origin City', fontsize=14)
+plt.ylabel('City', fontsize=14)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 plt.grid(axis='x', linestyle='--', alpha=0.7)
@@ -614,7 +614,7 @@ sns.barplot(x='passengers', y='city2', data=top_cities,
 plt.title('Top 10 Busiest US Cities by Arriving Traffic (1993-2024)',
           fontsize=16, fontweight='bold')
 plt.xlabel('Total Passengers (in Millions)', fontsize=14)
-plt.ylabel('Origin City', fontsize=14)
+plt.ylabel('City', fontsize=14)
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 plt.grid(axis='x', linestyle='--', alpha=0.7)
@@ -1399,7 +1399,6 @@ for route in ['short', 'long']:
 # - **Deep Learning Approaches:** Implement time-series neural networks (e.g., LSTMs) for sequence-based fare prediction.
 # - **Route Clustering:** Use unsupervised methods to group similar routes for more targeted pricing analysis.
 # - **Real-Time Data:** Incorporate up-to-date APIs or live pricing feeds to extend this framework to a real-time fare monitoring tool.
-# - **Route Clustering:** Use unsupervised methods to group similar routes for more targeted pricing analysis.
 
 # %% [markdown]
 # This study lays a foundation for actionable insights in airline pricing and demonstrates the power of data-driven decision-making in transportation economics.
