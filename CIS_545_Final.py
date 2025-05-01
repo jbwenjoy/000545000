@@ -491,16 +491,18 @@ plt.show()
 # ## **3.4 US Flight Fare and Passenger Count**
 
 # %%
+# Averging by quarters
 avg_passengers_per_quarter = df.groupby(['Year', 'quarter'])['passengers'].mean().reset_index()
 avg_fare_per_quarter = df.groupby(['Year', 'quarter'])['fare'].mean().reset_index()
 
 avg_passengers_per_quarter = avg_passengers_per_quarter.rename(columns={'quarter': 'Quarter'})
 avg_fare_per_quarter = avg_fare_per_quarter.rename(columns={'quarter': 'Quarter'})
 
+# Merging
 merged_df = pd.merge(avg_passengers_per_quarter, avg_fare_per_quarter, on=['Year', 'Quarter'], how='inner')
 merged_df['Year-Quarter'] = merged_df['Year'].astype(str) + '-Q' + merged_df['Quarter'].astype(str)
 
-
+# Plotting
 fig, ax1 = plt.subplots(figsize=(15, 6))
 sns.lineplot(x='Year-Quarter', y='fare', data=merged_df, marker='s', color='blue', ax=ax1, label='Average Fare')
 ax1.set_ylabel('Average Fare (USD)', color='blue', fontsize=12)
@@ -768,6 +770,9 @@ plt.grid(axis='y', linestyle='--', alpha=0.7)
 sns.despine()
 plt.tight_layout()
 plt.show()
+
+# %% [markdown]
+# From these two plots, since both cities and carriers have noticeable differences in fares, we will consider them and use encoding methods such as one-hot encoding in the later parts.
 
 # %% [markdown]
 # # **4. Feature Engineering**
@@ -1363,19 +1368,23 @@ for route in ['short', 'long']:
 #
 
 # %% [markdown]
-# # **8. Difficulty & Challenge**
+# # **8. Difficulties & Challenges**
 # Throughout the project, we encountered several challenges that required careful consideration and creative solutions:
+#
 # - **Outlier and Missing Value Handling:** Given the dataset's long historical range (1993–2024), inconsistencies such as missing or anomalous values were prevalent. We had to develop customized cleaning rules to remove outliers and ensure data quality without discarding too much information.
+#
+# - **Engineering Limited Features:** Airfare can be affected by a great variety of factors and can change rapidly within hours. However, to the best of our knowledge, we did not find another airfare dataset that contains more valuable features comparing to the one we used. Therefore, it can be hard to give accurate predictions and would require good feature engineering. We examined the data during EDA and did feature engineering over limited valid features, achieving good but far from ideal improvements.
 #
 # - **High Dimensionality:** After one-hot encoding categorical variables (e.g., cities, carriers), the dataset ballooned in size. This increased both training time and the risk of overfitting, which we mitigated by applying dimensionality reduction techniques like PCA.
 #
+# - **Git with IPython Notebooks:** This may not be a technical aspect. But collaborating and doing version control in an IPython Notebook file has benn very challenging. We dealt with a lot of complex Git problems when merging each other's changes. We also tried to develop scripts to better handle ipynb conflicts.
 
 # %% [markdown]
 # # **9. Conclusion & Future work**
 # In this project, we successfully explored key drivers of U.S. domestic airfare pricing using three decades of flight and economic data. Our EDA and hypothesis tests provided insight into how factors such as route distance, seasonality, carrier competition, and oil prices influence ticket costs. We also built regression models that achieved reasonable predictive performance, demonstrating the feasibility of forecasting average fares based on historical patterns and economic indicators.
 #
-
-
+#
+#
 
 # %% [markdown]
 # **Conclusion:**
