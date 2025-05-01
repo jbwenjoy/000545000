@@ -175,14 +175,14 @@ except NameError:
 if not file_exists:
     # Create the kaggle directory and
     # (NOTE: Do NOT run this cell more than once unless restarting kernel)
-    !mkdir ~/.kaggle
+    # !mkdir ~/.kaggle
 
     # Read the uploaded kaggle.json file
-    !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
+    # !cp /content/drive/MyDrive/kaggle.json ~/.kaggle/
 
     # Download flights dataset (DO NOT CHANGE)
-    !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
-    !unzip /content/us-airline-flight-routes-and-fares-1993-2024
+    # !kaggle datasets download -d bhavikjikadara/us-airline-flight-routes-and-fares-1993-2024
+    # !unzip /content/us-airline-flight-routes-and-fares-1993-2024
 
     flights_data = 'US Airline Flight Routes and Fares 1993-2024.csv'
     flights_df = pd.read_csv(flights_data, low_memory=False)
@@ -645,6 +645,8 @@ plt.show()
 
 # %% [markdown]
 # ## **3.7 Correlation Analysis**
+#
+# ### **3.7.1 Numerical Features**
 
 # %%
 def get_numerical_cols(dataframe, cat_th=10, car_th=20):
@@ -704,10 +706,65 @@ correlation_fuel_fare = merged_df['fare'].corr(merged_df['Price'])
 print(f"Correlation between airfare and fuel price (quarterly average): {correlation_fuel_fare:.2f}")
 
 # %% [markdown]
-#
+# From the correlation analysis above, we can see that airfare does have some correlation with existing numerical features. Higher fuel price, longer distance, and less passengers tend to lead to higher fare price. Large carriers tend to dominate the market and affect the airfare the most, low-fare carriers can have less market share and more flexible pricing policy and thus lead to a weaker correlation.
 
 # %% [markdown]
-# From the correlation analysis above, we can see that airfare does have some correlation with existing numerical features. Higher fuel price, longer distance, and less passengers tend to lead to higher fare price. Large carriers tend to dominate the market and affect the airfare the most, low-fare carriers can have less market share and more flexible pricing policy and thus lead to a weaker correlation.
+# ### **3.7.2 Categorical features**
+#
+# #### **Quarters**
+
+# %%
+df_copy = df.copy()
+df_copy['quarter'] = df_copy['quarter'].astype(str)
+plt.figure(figsize=(8, 6))
+sns.boxplot(x='quarter', y='fare', data=df_copy, palette='Set3')
+plt.title('Distribution of Fare by Quarter', fontsize=14, fontweight='bold')
+plt.xlabel('Quarter', fontsize=12)
+plt.ylabel('Fare (USD)', fontsize=12)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+sns.despine()
+plt.show()
+
+# %% [markdown]
+# Since the differences are small, we believe that within our dataset, quarter does not play a significant role in deciding the air fare.
+#
+# #### Cities/Airports
+
+# %%
+# Merge departing and arrival cities
+df_city_fare = pd.concat([
+    df[['city1', 'fare']].rename(columns={'city1': 'city'}),
+    df[['city2', 'fare']].rename(columns={'city2': 'city'})
+])
+# Only view top cities since there are too many
+top_cities = df_city_fare['city'].value_counts().head(10).index.tolist()
+df_top_cities = df_city_fare[df_city_fare['city'].isin(top_cities)]
+
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='city', y='fare', data=df_top_cities, palette='Set2')
+plt.title('Fare Distribution for Top 10 Cities (Departure + Arrival)', fontsize=14, fontweight='bold')
+plt.xlabel('City', fontsize=12)
+plt.ylabel('Fare (USD)', fontsize=12)
+plt.xticks(rotation=45)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+sns.despine()
+plt.tight_layout()
+plt.show()
+
+# %%
+carriers = df['carrier_lg'].value_counts().index.tolist()
+df_carriers = df[df['carrier_lg'].isin(carriers)]
+
+plt.figure(figsize=(12, 8))
+sns.boxplot(x='carrier_lg', y='fare', data=df_carriers, palette='Set1')
+plt.title('Fare Distribution by Airlines', fontsize=14, fontweight='bold')
+plt.xlabel('Airline', fontsize=12)
+plt.ylabel('Fare (USD)', fontsize=12)
+plt.xticks(rotation=45)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+sns.despine()
+plt.tight_layout()
+plt.show()
 
 # %% [markdown]
 # # **4. Feature Engineering**
